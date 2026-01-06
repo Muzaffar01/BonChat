@@ -11,9 +11,9 @@ const urlToUse = isValidUrl(supabaseUrl) ? supabaseUrl! : 'https://placeholder.s
 const keyToUse = supabaseAnonKey || 'placeholder';
 
 if (!isValidUrl(supabaseUrl)) {
-    console.warn("WARNING: Invalid or missing NEXT_PUBLIC_SUPABASE_URL. Using placeholder. Please update .env.local");
+    // URL invalid
 } else {
-    console.log("Supabase client initialized with URL:", supabaseUrl);
+    // Initialized
 }
 
 export const supabase = createClient(urlToUse, keyToUse);

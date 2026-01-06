@@ -44,7 +44,7 @@ export default function Room() {
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
-    const [myUsername, setMyUsername] = useState('You');
+    const [myUsername, setMyUsername] = useState('Guest');
 
     // Notes states
     const [notesContent, setNotesContent] = useState('');
@@ -54,6 +54,7 @@ export default function Room() {
     // Recording states
     const [isRecording, setIsRecording] = useState(false);
     const [isHost, setIsHost] = useState(false);
+    const isHostRef = useRef(false);
     const [hostId, setHostId] = useState<string | null>(null);
     const [isAdmitted, setIsAdmitted] = useState(false);
     const [waitingUsers, setWaitingUsers] = useState<{ id: string, username: string }[]>([]);
@@ -120,26 +121,26 @@ export default function Room() {
                     if (config.roomId === roomId) {
                         setMuted(config.audio === false); // logic updates: if audio=true, muted=false
                         setVideoEnabled(config.video !== false);
-                        setMyUsername(config.username || user.username || 'You');
-
+                        setMyUsername(config.username || user.username || 'Guest');
                         // Handle host logic if passed
                         if (config.isHost) setIsHost(true);
                     } else {
                         // Config mismatch (old session), fallback to user defaults
-                        setMyUsername(user.username || 'You');
+                        setMyUsername(user.username || 'Guest');
                     }
                 } catch (e) {
-                    console.error("Error parsing meeting config", e);
-                    setMyUsername(user.username || 'You');
+                    // Error parsing meeting config
                 }
-            } else {
-                // Direct access fallback
-                setMyUsername(user.username || 'You');
-
-                // Fallback to query params just in case user shared a link with params old style
-                if (router.query.username) setMyUsername(router.query.username as string);
+                setMyUsername(user.username || 'Guest');
             }
+        } else {
+            // Direct access fallback
+            setMyUsername(user?.username || 'Guest');
+
+            // Fallback to query params just in case user shared a link with params old style
+            if (router.query.username) setMyUsername(router.query.username as string);
         }
+
     }, [user, loading, router, roomId]);
 
     // Apply initial media states to local stream
@@ -193,8 +194,13 @@ export default function Room() {
         };
     }, [notesContent, roomId]);
 
+    // Sync isHostRef
     useEffect(() => {
-        if (!roomId || !supabase || initialized.current) return;
+        isHostRef.current = isHost;
+    }, [isHost]);
+
+    useEffect(() => {
+        if (!roomId || !supabase || loading || initialized.current) return;
         initialized.current = true;
 
         const init = async () => {
@@ -261,13 +267,12 @@ export default function Room() {
                 channel
                     .on('broadcast', { event: 'user-connected' }, ({ payload }) => {
                         const { userId, username, filter } = payload;
-                        console.log('User connected:', userId, username, filter);
+                        // User connected
                         // Avoid connecting to self if broadcast somehow loops
                         if (userId === myId) return;
 
                         // Prevent duplicate connections
                         if (peersRef.current.find(p => p.peerId === userId)) {
-                            console.log('Already connected to user:', userId);
                             return;
                         }
 
@@ -297,7 +302,6 @@ export default function Room() {
                     })
                     // Chat & Events
                     .on('broadcast', { event: 'receive-message' }, ({ payload: data }) => {
-                        console.log('Message received via broadcast:', data);
 
                         // Ignore our own messages as we handle them optimistically
                         if (data.userId === myId) return;
@@ -310,7 +314,7 @@ export default function Room() {
                             return [...prev, data];
                         });
 
-                        const myNameAttr = myUsername || user?.username || 'You';
+                        const myNameAttr = myUsername || user?.username || 'Guest';
                         const isMention = data.message.includes(`@${myNameAttr}`);
 
                         playChatSound(isMention);
@@ -330,7 +334,6 @@ export default function Room() {
                     })
                     .on('broadcast', { event: 'filter-changed' }, ({ payload }) => {
                         const { userId, filter } = payload;
-                        console.log('Filter changed for user:', userId, filter);
 
                         // Update ref AND trigger state update
                         const peerIndex = peersRef.current.findIndex(p => p.peerId === userId);
@@ -343,14 +346,56 @@ export default function Room() {
                     })
                     // --- Waiting Room Signaling ---
                     .on('broadcast', { event: 'request-entry' }, ({ payload }) => {
+                        // Only host receives requests
+                        if (!isHostRef.current) return;
+
                         const { userId, username } = payload;
-                        console.log("Entry request from:", username);
 
                         setWaitingUsers(prev => {
                             if (prev.find(u => u.id === userId)) return prev;
                             return [...prev, { id: userId, username }];
                         });
                         playChatSound(true);
+
+                        // Show Approval Modal
+                        setModalConfig({
+                            isOpen: true,
+                            title: 'Join Request',
+                            content: `${username} wants to join the meeting.`,
+                            onClose: () => { }, // Host must choose
+                            actions: (
+                                <div className="flex gap-3 w-full">
+                                    <button
+                                        onClick={() => {
+                                            channelRef.current?.send({
+                                                type: 'broadcast',
+                                                event: 'entry-decision',
+                                                payload: { targetId: userId, decision: 'rejected' }
+                                            });
+                                            setWaitingUsers(prev => prev.filter(pu => pu.id !== userId));
+                                            setModalConfig(prev => ({ ...prev, isOpen: false }));
+                                        }}
+                                        className="flex-1 px-4 py-2 border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                    >
+                                        Deny
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            channelRef.current?.send({
+                                                type: 'broadcast',
+                                                event: 'entry-decision',
+                                                payload: { targetId: userId, decision: 'approved' }
+                                            });
+                                            setWaitingUsers(prev => prev.filter(pu => pu.id !== userId));
+                                            setModalConfig(prev => ({ ...prev, isOpen: false }));
+                                        }}
+                                        className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors"
+                                    >
+                                        Admit
+                                    </button>
+                                </div>
+                            )
+                        });
                     })
                     .on('broadcast', { event: 'meeting-ended' }, () => {
                         setModalConfig({
@@ -433,7 +478,8 @@ export default function Room() {
                             setHostId(electedHostId);
 
                             if (electedHostId === myId) {
-                                // optional: setIsHost(true); 
+                                setIsHost(true);
+                                setIsAdmitted(true);
                             }
                         }
 
@@ -476,7 +522,6 @@ export default function Room() {
                         if (status === 'SUBSCRIBED') {
                             const savedFilter = localStorage.getItem('videoFilter') || 'none';
                             if (!initialIsHost) {
-                                console.log("Requesting entry...");
                                 await channel.track({
                                     online_at: new Date().toISOString(),
                                     userId: myId,
@@ -509,7 +554,8 @@ export default function Room() {
 
                 // Cleanup on unmount handled by useEffect return
             } catch (err) {
-                console.error('Failed to initialize room', err);
+
+                // Failed to initialize room
             }
         };
 
@@ -522,7 +568,7 @@ export default function Room() {
             setPeers([]);
             peersRef.current = [];
         };
-    }, [roomId, supabase]);
+    }, [roomId, supabase, loading, user]);
 
     // Helper to get ICE servers configuration
     const getIceServers = () => {
@@ -540,7 +586,6 @@ export default function Room() {
         const turnCred = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
 
         if (turnUrl && turnUser && turnCred) {
-            console.log("Using TURN server from config");
             defaultIceServers.push({
                 urls: turnUrl,
                 username: turnUser,
@@ -579,7 +624,7 @@ export default function Room() {
             }
         });
 
-        peer.on('error', (err) => console.error("Peer error (initiator):", err));
+        peer.on('error', (err) => { });
 
         return peer;
     }
@@ -609,7 +654,7 @@ export default function Room() {
             }
         });
 
-        peer.on('error', (err) => console.error("Peer error (receiver):", err));
+        peer.on('error', (err) => { });
 
         peer.signal(incomingSignal as Peer.SignalData);
         return peer;
@@ -640,7 +685,6 @@ export default function Room() {
                 type: file.type
             });
         } catch (error) {
-            console.error('Error uploading file:', error);
             setModalConfig({
                 isOpen: true,
                 title: 'Upload Failed',
@@ -660,12 +704,10 @@ export default function Room() {
         if (e) e.preventDefault();
         const msgText = newMessage.trim();
         const myChannel = channelRef.current;
-        console.log("Attempting to send message. Channel:", !!myChannel);
 
         if (!msgText && !fileData) return;
 
         if (!myChannel) {
-            console.error("Channel not initialized");
             setModalConfig({
                 isOpen: true,
                 title: 'Connection Lost',
@@ -707,7 +749,9 @@ export default function Room() {
             fileType: fileData?.type
         };
 
-        console.log("Sending broadcast:", msgData);
+
+
+        // console.log("Sending broadcast:", msgData);
 
         try {
             await myChannel.send({
@@ -726,7 +770,7 @@ export default function Room() {
                 fileData?.type
             );
         } catch (err) {
-            console.error("Failed to send/save message", err);
+            // Failed to send/save message
             // Optionally rollback optimistic update here if needed
         }
     };
@@ -817,7 +861,7 @@ export default function Room() {
             oscillator.start();
             oscillator.stop(audioContext.currentTime + 0.6);
         } catch (e) {
-            console.warn("Audio Context error:", e);
+            // Audio Context error
         }
     };
 
@@ -829,7 +873,7 @@ export default function Room() {
                     icon: '/favicon.ico' // Default app icon
                 });
             } catch (e) {
-                console.warn("Notification error:", e);
+                // Notification error
             }
         }
     };
@@ -1011,14 +1055,13 @@ export default function Room() {
         // Notify other participants using the persistent channel ref
         const myChannel = channelRef.current;
         if (myChannel) {
-            console.log('Broadcasting filter change:', filter);
             myChannel.send({
                 type: 'broadcast',
                 event: 'filter-changed',
                 payload: { userId: myId, filter }
             });
         } else {
-            console.warn('Channel not available to broadcast filter change');
+            // Channel not available to broadcast filter change
         }
     };
 
@@ -1178,7 +1221,6 @@ export default function Room() {
                 }
                 setIsRecording(true);
             } catch (err) {
-                console.error('Failed to start recording:', err);
                 alert('Failed to start recording. Please try again.');
             }
         } else {
@@ -1244,7 +1286,7 @@ export default function Room() {
                 });
 
             } catch (err) {
-                console.error("Failed to share screen", err);
+                // Failed to share screen
             }
         }
     };
@@ -1376,19 +1418,19 @@ export default function Room() {
 
                 {/* Video Grid */}
                 <div className="flex-1 p-4 md:p-6 flex items-center justify-center overflow-y-auto pt-20 pb-28 md:pt-24 md:pb-32">
-                    <div className={`w - full h - full max - w - 7xl grid gap - 4 md: gap - 6 transition - all duration - 500 ${peers.length === 0 ? 'grid-cols-1' :
-                        peers.length === 1 ? 'grid-cols-1 md:grid-cols-2' :
-                            peers.length <= 3 ? 'grid-cols-1 md:grid-cols-2' :
-                                'grid-cols-1 md:grid-cols-3'
+                    <div className={`w-full max-w-7xl grid gap-3 md:gap-6 transition-all duration-500 ${peers.length === 0 ? 'grid-cols-1 md:max-w-4xl' :
+                        peers.length === 1 ? 'grid-cols-1 sm:grid-cols-2' :
+                            peers.length <= 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2' :
+                                'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                         } `}>
                         {localStream && (
-                            <div className="relative animate-fade-in aspect-video md:aspect-auto">
+                            <div className="relative animate-fade-in aspect-video shadow-2xl rounded-3xl overflow-hidden glass-card">
                                 <VideoPlayer stream={localStream} muted={true} isLocal={true} username={myUsername} filter={getFilterStyle(activeFilter)} />
                             </div>
                         )}
                         {peers.map((peerData) => (
                             peerData.stream && (
-                                <div key={peerData.peerId} className="relative animate-fade-in aspect-video md:aspect-auto">
+                                <div key={peerData.peerId} className="relative animate-fade-in aspect-video shadow-2xl rounded-3xl overflow-hidden glass-card">
                                     <VideoPlayer
                                         stream={peerData.stream}
                                         username={peerData.username}

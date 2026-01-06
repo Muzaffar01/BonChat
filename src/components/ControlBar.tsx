@@ -42,12 +42,12 @@ const ControlBar: React.FC<ControlBarProps> = ({
     onEndMeeting
 }) => {
     return (
-        <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-30 w-[95%] md:w-auto">
-            <div className="flex items-center justify-center gap-2 md:gap-3 bg-slate-900/60 backdrop-blur-2xl px-3 py-3 md:px-6 md:py-4 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl overflow-x-auto no-scrollbar">
+        <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-30 w-[95%] md:w-auto max-w-[calc(100%-2rem)]">
+            <div className="flex items-center justify-center gap-1 md:gap-3 bg-slate-900/60 backdrop-blur-2xl px-2 py-2 md:px-6 md:py-4 rounded-[2rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl overflow-x-auto no-scrollbar scroll-smooth">
                 {/* Share Button */}
                 <button
                     onClick={onShare}
-                    className="p-2.5 md:p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all duration-300 flex-shrink-0"
+                    className="p-2 md:p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all duration-300 flex-shrink-0"
                     title="Share Room ID"
                 >
                     <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,10 +57,9 @@ const ControlBar: React.FC<ControlBarProps> = ({
 
                 <div className="hidden md:block w-px h-8 bg-white/10 mx-1"></div>
 
-                {/* Mic Button */}
                 <button
                     onClick={onToggleAudio}
-                    className={`p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${muted ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20' : 'bg-white/10 hover:bg-white/20'}`}
+                    className={`p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${muted ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20' : 'bg-white/10 hover:bg-white/20'}`}
                 >
                     {muted ? (
                         <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +75,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                 {/* Video Button */}
                 <button
                     onClick={onToggleVideo}
-                    className={`p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${!videoEnabled ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20' : 'bg-white/10 hover:bg-white/20'}`}
+                    className={`p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${!videoEnabled ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20' : 'bg-white/10 hover:bg-white/20'}`}
                 >
                     {!videoEnabled ? (
                         <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +91,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                 {/* Filters Button */}
                 <button
                     onClick={onOpenFilters}
-                    className="p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 bg-white/10 hover:bg-white/20 flex-shrink-0"
+                    className="p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 bg-white/10 hover:bg-white/20 flex-shrink-0"
                     title="Video Filters"
                 >
                     <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +102,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                 {/* Chat Button */}
                 <button
                     onClick={onToggleChat}
-                    className={`p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${chatOpen ? 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white/10 hover:bg-white/20'}`}
+                    className={`p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${chatOpen ? 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/20' : 'bg-white/10 hover:bg-white/20'}`}
                 >
                     <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
@@ -113,7 +112,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                 {/* Notes Button */}
                 <button
                     onClick={onToggleNotes}
-                    className={`p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${notesOpen ? 'bg-purple-500 hover:bg-purple-600 shadow-lg shadow-purple-500/20' : 'bg-white/10 hover:bg-white/20'}`}
+                    className={`p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${notesOpen ? 'bg-purple-500 hover:bg-purple-600 shadow-lg shadow-purple-500/20' : 'bg-white/10 hover:bg-white/20'}`}
                     title="Meeting Notes"
                 >
                     <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +123,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                 {/* Screen Share Button */}
                 <button
                     onClick={onToggleScreenShare}
-                    className={`p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${isScreenSharing ? 'bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20' : 'bg-white/10 hover:bg-white/20'}`}
+                    className={`p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 ${isScreenSharing ? 'bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/20' : 'bg-white/10 hover:bg-white/20'}`}
                     title={isScreenSharing ? "Stop Sharing" : "Share Screen"}
                 >
                     <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +134,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                 {/* Participants Button */}
                 <button
                     onClick={onToggleParticipants}
-                    className="p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 bg-white/10 hover:bg-white/20 flex-shrink-0"
+                    className="p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 bg-white/10 hover:bg-white/20 flex-shrink-0"
                     title="Participants"
                 >
                     <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,7 +146,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                 <button
                     onClick={onToggleRecording}
                     disabled={!isHost}
-                    className={`p-3 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 relative flex-shrink-0 ${!isHost
+                    className={`p-2 md:p-4 rounded-[1rem] md:rounded-[1.25rem] transition-all duration-300 relative flex-shrink-0 ${!isHost
                         ? 'bg-white/5 text-white/30 cursor-not-allowed'
                         : recording
                             ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 animate-pulse'
@@ -176,7 +175,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                     {isHost && onEndMeeting && (
                         <button
                             onClick={onEndMeeting}
-                            className="p-3 md:p-4 bg-red-600 hover:bg-red-700 text-white rounded-[1rem] md:rounded-[1.25rem] shadow-lg shadow-red-600/20 transform hover:scale-110 active:scale-95 transition-all duration-300 flex-shrink-0"
+                            className="p-2 md:p-4 bg-red-600 hover:bg-red-700 text-white rounded-[1rem] md:rounded-[1.25rem] shadow-lg shadow-red-600/20 transform hover:scale-110 active:scale-95 transition-all duration-300 flex-shrink-0"
                             title="End Meeting for All"
                         >
                             <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +185,7 @@ const ControlBar: React.FC<ControlBarProps> = ({
                     )}
                     <button
                         onClick={onLeave}
-                        className={`p-3 md:p-4 text-white rounded-[1rem] md:rounded-[1.25rem] shadow-lg shadow-red-600/20 transform hover:scale-110 active:scale-95 transition-all duration-300 flex-shrink-0 ${isHost ? 'bg-slate-700 hover:bg-slate-600' : 'bg-red-600 hover:bg-red-700'}`}
+                        className={`p-2 md:p-4 text-white rounded-[1rem] md:rounded-[1.25rem] shadow-lg shadow-red-600/20 transform hover:scale-110 active:scale-95 transition-all duration-300 flex-shrink-0 ${isHost ? 'bg-slate-700 hover:bg-slate-600' : 'bg-red-600 hover:bg-red-700'}`}
                         title="Leave Room"
                     >
                         <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24">

@@ -41,7 +41,7 @@ export default function Register() {
             if (!userId) {
                 if (!password) { setVerifying(false); return setError("Password required"); }
 
-                console.log("Signing up with password...");
+                // Signing up...
                 const { data, error: signUpError } = await supabase.auth.signUp({
                     email,
                     password,
@@ -78,7 +78,6 @@ export default function Register() {
 
             router.push('/');
         } catch (err: any) {
-            console.error("Registration error:", err);
             setError(err.message);
         } finally {
             setVerifying(false);
@@ -111,11 +110,6 @@ export default function Register() {
                         {error && (
                             <div className={`p-4 ${error.includes("email sent") ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-error text-on-error'} rounded-xl text-sm py-3 text-center mb-4`}>
                                 {error}
-                                <div className="mt-2 text-xs opacity-75 font-mono text-left">
-                                    Debug: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'URL Loaded' : 'URL Missing'}
-                                    <br />
-                                    Error Details: {JSON.stringify(error, Object.getOwnPropertyNames(error))}
-                                </div>
                             </div>
                         )}
 

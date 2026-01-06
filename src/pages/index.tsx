@@ -39,7 +39,7 @@ export default function Dashboard() {
       });
       setPreviewStream(stream);
     } catch (err) {
-      console.error("Error accessing media devices", err);
+      // Error accessing media devices
     }
   };
 

@@ -53,7 +53,6 @@ export async function saveMessage(
             createdAt: Number(data.created_at)
         };
     } catch (e) {
-        console.error("Error saving message", e);
         return null;
     }
 }
@@ -81,7 +80,6 @@ export async function getMessages(roomId: string): Promise<Message[]> {
             createdAt: Number(msg.created_at)
         }));
     } catch (e) {
-        console.error("Error fetching messages", e);
         return [];
     }
 }

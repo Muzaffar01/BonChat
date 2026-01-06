@@ -42,14 +42,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const checkSession = async () => {
             // Check for errors in URL (Supabase returns errors in hash)
             if (window.location.hash.includes('error=')) {
-                console.error("Auth error found in URL hash:", window.location.hash);
+                // handle error silently
             }
 
             const start = Date.now();
-            console.log("Checking Supabase session...");
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                console.log("Session found, fetching profile...");
                 const profile = await findUserById(session.user.id);
                 if (profile) {
                     setUser({
@@ -62,7 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     });
                 }
             }
-            console.log(`Initial session check took ${Date.now() - start}ms`);
             setLoading(false);
         };
 
@@ -70,7 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log("Auth state change event:", event);
             if (session?.user) {
                 const profile = await findUserById(session.user.id);
                 if (profile) {

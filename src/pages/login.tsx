@@ -25,7 +25,6 @@ export default function Login() {
         }
 
         try {
-            console.log("Logging in with password...");
             const { data, error: loginError } = await supabase.auth.signInWithPassword({
                 email,
                 password
@@ -50,7 +49,6 @@ export default function Login() {
                 });
             }
         } catch (err: any) {
-            console.error("Login error:", err);
             if (err.message === 'Invalid login credentials') {
                 setError("Invalid email or password. Don't have an account?");
             } else {

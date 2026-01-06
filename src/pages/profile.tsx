@@ -51,7 +51,7 @@ export default function Profile() {
             const fileName = `${user?.id}/${Math.random()}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            let { error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file);
 
