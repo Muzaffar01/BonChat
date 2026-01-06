@@ -1,40 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# BonChat
+
+BonChat is a modern, real-time video conferencing and chat application built with **Next.js** and **Supabase**. It leverages **WebRTC** to enable secure, low-latency peer-to-peer video and audio communication directly in the browser.
+
+## Key Features
+
+- **Real-time Video & Audio Calls**: High-quality P2P communication powered by WebRTC and Simple Peer.
+- **Instant Messaging**: Real-time chat functionality synchronized via Supabase.
+- **Secure Authentication**: User management and authentication handled by Supabase Auth.
+- **Screen Sharing**: Easily share your screen with other participants.
+- **File Sharing**: Share files and images directly within the chat interface.
+- **Video Filters**: Apply fun real-time video filters (Grayscale, Sepia, Blur, etc.).
+- **Meeting Recording**: Record your meetings directly from the client.
+- **Waiting Room**: Host control for admitting participants to the meeting.
+- **Modern UI**: Sleek, responsive interface built with Tailwind CSS.
+
+## Tech Stack
+
+-   **Frontend**: [Next.js 15](https://nextjs.org/), [React 19](https://react.dev/)
+-   **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+-   **Backend/Database**: [Supabase](https://supabase.com/) (PostgreSQL, Realtime, Auth, Storage)
+-   **WebRTC**: [simple-peer](https://github.com/feross/simple-peer) for peer-to-peer connections
+-   **Icons**: [Lucide React](https://lucide.dev/)
 
 ## Getting Started
 
-First, run the development server:
+Follow these steps to set up the project locally.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Prerequisites
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+-   Node.js (v18 or higher recommended)
+-   npm or yarn
+-   A [Supabase](https://supabase.com/) project
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+### Installation
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/yourusername/bonchat-web.git
+    cd bonchat-web
+    ```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3.  **Environment Configuration:**
 
-## Learn More
+    Create a `.env.local` file in the root directory and add your Supabase credentials:
 
-To learn more about Next.js, take a look at the following resources:
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+    > **Note**: You can find these keys in your Supabase Project Settings -> API.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4.  **Database Setup:**
 
-## Deploy on Vercel
+    Ensure your Supabase project has the required tables designed for messaging. (If you have a schema file `supabase_schema.sql`, you can run it in the SQL Editor of your Supabase dashboard).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+    Open [http://localhost:3000](http://localhost:3000) with your browser.
+
+## Usage
+
+1.  **Sign Up/Login**: Create an account or log in to access the app.
+2.  **Create a Room**: Start a new meeting room.
+3.  **Invite Others**: Share the room ID or URL with others to join.
+4.  **Collaborate**: Use chat, video, and screen sharing to collaborate.
+
+## Deployment
+
+This application is optimized for deployment on [Vercel](https://vercel.com/).
+
+1.  Push your code to a Git repository.
+2.  Import the project into Vercel.
+3.  Add your `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the Vercel Environment Variables.
+4.  Deploy!
+
+## License
+
+[MIT](LICENSE)
