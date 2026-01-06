@@ -36,7 +36,11 @@ Follow these steps to set up the project locally.
 
 1.  **Clone the repository:**
     ```bash
+<<<<<<< HEAD
     git clone https://github.com/yourusername/bonchat-web.git
+=======
+    git clone https://github.com/Muzaffar01/bonchat-web.git
+>>>>>>> 6a1769ecff46fc588cf436511fe0be5dba72743f
     cd bonchat-web
     ```
 
