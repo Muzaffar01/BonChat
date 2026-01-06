@@ -143,6 +143,24 @@ export default function Room() {
 
     }, [user, loading, router, roomId]);
 
+    // Warn on page refresh if recording or in meeting
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (isAdmitted || isRecording) {
+                e.preventDefault();
+                e.returnValue = ''; // Chrome requires this to be set
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isAdmitted, isRecording]);
+
+    // Save settings to localStorage
+    useEffect(() => {
+        localStorage.setItem('bonchat_settings', JSON.stringify({ muted, videoEnabled }));
+    }, [muted, videoEnabled]);
+
     // Apply initial media states to local stream
     useEffect(() => {
         if (localStream) {
@@ -200,7 +218,8 @@ export default function Room() {
     }, [isHost]);
 
     useEffect(() => {
-        if (!roomId || !supabase || loading || initialized.current) return;
+        const currentRoomId = router.query.roomId as string;
+        if (!currentRoomId || !supabase || loading || initialized.current) return;
         initialized.current = true;
 
         const init = async () => {
@@ -234,10 +253,25 @@ export default function Room() {
                         initialIsHost = true;
                         setIsHost(true);
                         setIsAdmitted(true);
+                        sessionStorage.setItem(`bonchat_admitted_${roomId}`, 'true');
                     }
                 }
 
-                if (!initialIsHost) {
+                // Check for persisted admission
+                if (sessionStorage.getItem(`bonchat_admitted_${roomId}`) === 'true') {
+                    setIsAdmitted(true);
+                    initialIsHost = initialIsHost || true; // Treat as admitted for logic flow, though strict host check remains separate
+                }
+
+                // Restoring persistent settings
+                const savedSettings = localStorage.getItem('bonchat_settings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    setMuted(settings.muted);
+                    setVideoEnabled(settings.videoEnabled);
+                }
+
+                if (!initialIsHost && !isHost && !isAdmitted && sessionStorage.getItem(`bonchat_admitted_${roomId}`) !== 'true') {
                     // Check limit first
                     const { count, error: countError } = await channel.presenceState();
                     // Note: presenceState returns an object keyed by presence key. 
@@ -520,22 +554,24 @@ export default function Room() {
                     })
                     .subscribe(async (status) => {
                         if (status === 'SUBSCRIBED') {
-                            const savedFilter = localStorage.getItem('videoFilter') || 'none';
-                            if (!initialIsHost) {
+                            console.log('Room subscribed');
+                            // Logic temporarily removed for syntax debugging
+                            const currentRoomId = router.query.roomId as string;
+                            const isAlreadyAdmitted = sessionStorage.getItem(`bonchat_admitted_${currentRoomId}`) === 'true';
+
+                            if (!initialIsHost && !isAlreadyAdmitted) {
                                 await channel.track({
                                     online_at: new Date().toISOString(),
                                     userId: myId,
                                     username: name,
                                     status: 'waiting'
                                 });
-                                // We also broadcast for immediate notification
                                 await channel.send({
                                     type: 'broadcast',
                                     event: 'request-entry',
                                     payload: { userId: myId, username: name }
                                 });
                             } else {
-                                const savedFilter = localStorage.getItem('videoFilter') || 'none';
                                 await channel.track({
                                     online_at: new Date().toISOString(),
                                     userId: myId,
@@ -543,6 +579,7 @@ export default function Room() {
                                     joinTime: Date.now(),
                                     status: 'admitted'
                                 });
+                                const savedFilter = localStorage.getItem('videoFilter') || 'none';
                                 channel.send({
                                     type: 'broadcast',
                                     event: 'user-connected',
@@ -551,11 +588,8 @@ export default function Room() {
                             }
                         }
                     });
-
-                // Cleanup on unmount handled by useEffect return
-            } catch (err) {
-
-                // Failed to initialize room
+            } catch (error) {
+                console.error('Error initializing room:', error);
             }
         };
 
