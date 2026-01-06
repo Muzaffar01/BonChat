@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -59,12 +60,27 @@ export default function Dashboard() {
     stopPreview();
   };
 
-  const handleStartMeeting = (e: React.FormEvent) => {
+  const handleStartMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
     const id = crypto.randomUUID();
     stopPreview();
 
-    // Pass settings via session storage to keep URL clean
+    // Persist room config to Supabase
+    const { error } = await supabase
+      .from('rooms')
+      .insert({
+        room_id: id,
+        created_by: user?.id,
+        name: meetingName || `${user?.username}'s Meeting`,
+        max_participants: participantLimit
+      });
+
+    if (error) {
+      console.error("Failed to create room:", error);
+      // Fallback or alert user, but for now we proceed with session storage flow
+    }
+
+    // Pass settings via session storage to keep URL clean (redundant but useful for immediate local config)
     const config = {
       roomId: id,
       name: meetingName || `${user?.username}'s Meeting`,

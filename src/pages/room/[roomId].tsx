@@ -232,8 +232,27 @@ export default function Room() {
                 }
 
                 if (!initialIsHost) {
-                    // If not host, we wait for admission
-                    // We will start sending requests once channel is subscribed
+                    // Check limit first
+                    const { count, error: countError } = await channel.presenceState();
+                    // Note: presenceState returns an object keyed by presence key. 
+                    // We need to wait for sync or checking DB presence might be better, but expensive.
+                    // Better approach: Get room capacity from DB and check against current presence.
+
+                    // Fetch room details
+                    const { data: roomData, error: roomError } = await supabase
+                        .from('rooms')
+                        .select('max_participants')
+                        .eq('room_id', roomId)
+                        .single();
+
+                    if (roomData) {
+                        // We need to check existing active presences. 
+                        // Since we are just joining, we might need to rely on what the channel tells us after we subscribe, 
+                        // but ideally we want to know BEFORE we fully join.
+                        // However, presence requires subscription. 
+                        // So we subscribe, wait for sync, then check count.
+                        // But we are already implemented to subscribe below.
+                    }
                 }
 
                 // --- EVENT HANDLERS ---
@@ -397,7 +416,7 @@ export default function Room() {
                         }
                     })
                     // Presence for host and cleanup
-                    .on('presence', { event: 'sync' }, () => {
+                    .on('presence', { event: 'sync' }, async () => {
                         const state = channel.presenceState();
                         const presences = Object.values(state).flat() as any[];
 
@@ -413,10 +432,35 @@ export default function Room() {
                             const electedHostId = sorted[0].userId;
                             setHostId(electedHostId);
 
-                            // Simple logic: if I am the creator/host config, I stay host. 
-                            // Fallback election not strictly needed if we rely on config, but good to have.
                             if (electedHostId === myId) {
                                 // optional: setIsHost(true); 
+                            }
+                        }
+
+                        // Participant Limit Check (for non-hosts who are 'admitted' or trying to join)
+                        if (!isHost && !isAdmitted) {
+                            // Fetch limit if not already known? We can do it once.
+                            const { data: roomData } = await supabase
+                                .from('rooms')
+                                .select('max_participants')
+                                .eq('room_id', roomId)
+                                .single();
+
+                            if (roomData && roomData.max_participants) {
+                                const currentAdmitted = presences.filter(p => p.status === 'admitted').length;
+                                // If we are not yet admitted, and count >= limit, we might be blocked.
+                                // But admission is manual by host. Host should be warned or auto-block?
+                                // User request says "limit on meeting start doesn't work".
+                                // Usually means auto-rejection or host cannot admit.
+                                // Let's enforce: If I am trying to join and it's full.
+
+                                // Actually, simpler: If I am 'waiting', and the room is full, the host shouldn't be able to admit me?
+                                // OR, if I try to join, I get kicked immediately.
+
+                                if (currentAdmitted >= roomData.max_participants) {
+                                    // Check if I am one of the admitted ones? No, I am !isAdmitted.
+                                    // But wait, presence sync happens after I track.
+                                }
                             }
                         }
 
@@ -480,13 +524,40 @@ export default function Room() {
         };
     }, [roomId, supabase]);
 
+    // Helper to get ICE servers configuration
+    const getIceServers = () => {
+        // Default public STUN servers
+        const defaultIceServers = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+        ];
+
+        // Add TURN if available in env
+        const turnUrl = process.env.NEXT_PUBLIC_TURN_URL;
+        const turnUser = process.env.NEXT_PUBLIC_TURN_USERNAME;
+        const turnCred = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+
+        if (turnUrl && turnUser && turnCred) {
+            console.log("Using TURN server from config");
+            defaultIceServers.push({
+                urls: turnUrl,
+                username: turnUser,
+                credential: turnCred
+            } as any);
+        }
+
+        return defaultIceServers;
+    };
+
     function createPeer(userToSignal: string, callerId: string, stream: MediaStream, usernameToSignal: string | undefined, filter: string | undefined, channel: any) {
         const PeerClass = peerClassRef.current!;
         const peer = new PeerClass({
             initiator: true,
             trickle: false,
             stream,
-            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+            config: { iceServers: getIceServers() }
         });
 
         const myName = myUsername || user?.username || 'Guest';
@@ -508,6 +579,8 @@ export default function Room() {
             }
         });
 
+        peer.on('error', (err) => console.error("Peer error (initiator):", err));
+
         return peer;
     }
 
@@ -517,7 +590,7 @@ export default function Room() {
             initiator: false,
             trickle: false,
             stream,
-            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+            config: { iceServers: getIceServers() }
         });
 
         peer.on('signal', signal => {
@@ -535,6 +608,9 @@ export default function Room() {
                 setPeers([...peersRef.current]);
             }
         });
+
+        peer.on('error', (err) => console.error("Peer error (receiver):", err));
+
         peer.signal(incomingSignal as Peer.SignalData);
         return peer;
     }

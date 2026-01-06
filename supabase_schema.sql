@@ -45,3 +45,25 @@ create policy "Messages are viewable by everyone."
 create policy "Authenticated users can insert messages."
   on public.messages for insert
   with check ( auth.role() = 'authenticated' );
+
+-- Create Rooms table
+create table public.rooms (
+  room_id text not null primary key,
+  created_by uuid references public.users(id),
+  name text,
+  max_participants int default 50,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS for Rooms
+alter table public.rooms enable row level security;
+
+-- Create Policy: Rooms are viewable by everyone (so people can join)
+create policy "Rooms are viewable by everyone."
+  on public.rooms for select
+  using ( true );
+
+-- Create Policy: Authenticated users can create rooms
+create policy "Authenticated users can create rooms."
+  on public.rooms for insert
+  with check ( auth.role() = 'authenticated' );
